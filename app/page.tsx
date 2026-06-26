@@ -261,6 +261,8 @@ export default function Home() {
   const [offerPrice, setOfferPrice] = useState('125,000');
   const [venture, setVenture] = useState('');
   const [message, setMessage] = useState('');
+  const [emailError, setEmailError] = useState('');
+  const [priceError, setPriceError] = useState('');
   
   // Submit state flow
   const [submitStep, setSubmitStep] = useState<'idle' | 'validating' | 'escrow' | 'success'>('idle');
@@ -295,7 +297,27 @@ export default function Home() {
 
   const handleInquirySubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !email || !offerPrice) return;
+    setEmailError('');
+    setPriceError('');
+
+    let hasError = false;
+
+    // Validate email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setEmailError('Please enter a valid email address.');
+      hasError = true;
+    }
+
+    // Validate offer price (strip commas, spaces, currency symbols)
+    const cleanPriceStr = offerPrice.replace(/[$,\s]/g, '');
+    const priceNum = parseFloat(cleanPriceStr);
+    if (isNaN(priceNum) || priceNum <= 0) {
+      setPriceError('Please enter a valid positive offer price.');
+      hasError = true;
+    }
+
+    if (hasError || !name || !email || !offerPrice) return;
 
     // Trigger simulation sequence
     setSubmitStep('validating');
@@ -343,6 +365,8 @@ export default function Home() {
     setVenture('');
     setMessage('');
     setSubmitStep('idle');
+    setEmailError('');
+    setPriceError('');
   };
 
   const entranceTransition = {
@@ -818,11 +842,17 @@ export default function Home() {
                             type="email" 
                             required
                             value={email}
-                            onChange={(e) => setEmail(e.target.value)}
+                            onChange={(e) => {
+                              setEmail(e.target.value);
+                              if (emailError) setEmailError('');
+                            }}
                             placeholder="alex@ventures.com"
-                            className="w-full bg-white/5 border border-white/10 rounded-full py-2.5 pl-10 pr-4 text-sm text-white placeholder-white/35 focus:outline-none focus:border-white/30 focus:bg-white/10 transition-all font-body"
+                            className={`w-full bg-white/5 border ${emailError ? 'border-red-500/50' : 'border-white/10'} rounded-full py-2.5 pl-10 pr-4 text-sm text-white placeholder-white/35 focus:outline-none focus:border-white/30 focus:bg-white/10 transition-all font-body`}
                           />
                         </div>
+                        {emailError && (
+                          <p className="text-red-400 text-xs mt-1 font-body pl-2">{emailError}</p>
+                        )}
                       </div>
 
                       {/* Offer + Venture Row */}
@@ -838,11 +868,17 @@ export default function Home() {
                               type="text" 
                               required
                               value={offerPrice}
-                              onChange={(e) => setOfferPrice(e.target.value)}
+                              onChange={(e) => {
+                                setOfferPrice(e.target.value);
+                                if (priceError) setPriceError('');
+                              }}
                               placeholder="125,000"
-                              className="w-full bg-white/5 border border-white/10 rounded-full py-2.5 pl-7 pr-4 text-sm text-white placeholder-white/35 font-semibold focus:outline-none focus:border-white/30 focus:bg-white/10 transition-all font-body"
+                              className={`w-full bg-white/5 border ${priceError ? 'border-red-500/50' : 'border-white/10'} rounded-full py-2.5 pl-7 pr-4 text-sm text-white placeholder-white/35 font-semibold focus:outline-none focus:border-white/30 focus:bg-white/10 transition-all font-body`}
                             />
                           </div>
+                          {priceError && (
+                            <p className="text-red-400 text-xs mt-1 font-body pl-2">{priceError}</p>
+                          )}
                         </div>
 
                         {/* Venture / Organization */}
