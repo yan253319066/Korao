@@ -1,0 +1,6 @@
+{
+  "name": "Korao.ai Premium AI Domain",
+  "description": "Premium domain acquisition landing page for korao.ai, built with liquid-glass design system, custom fading background videos, and modern animations.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
