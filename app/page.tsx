@@ -123,7 +123,7 @@ export default function Home() {
     }
   };
 
-  const handleInquirySubmit = (data: {
+  const handleInquirySubmit = async (data: {
     name: string;
     email: string;
     offerPrice: string;
@@ -132,33 +132,46 @@ export default function Home() {
   }) => {
     setSubmitStep('validating');
 
-    setTimeout(() => {
-      setSubmitStep('escrow');
-      
-      setTimeout(() => {
-        const newSubmission: InquirySubmission = {
-          id: Math.random().toString(36).substring(2, 9),
-          name: data.name,
-          email: data.email,
-          offerPrice: data.offerPrice,
-          venture: data.venture,
-          message: data.message,
-          submittedAt: new Date().toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-          })
-        };
+    try {
+      const res = await fetch('/api/offers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
 
-        const updated = [newSubmission, ...submissions];
-        setSubmissions(updated);
-        localStorage.setItem('korao_offers', JSON.stringify(updated));
-        
-        setSubmitStep('success');
-      }, 1500);
-    }, 1200);
+      if (!res.ok) throw new Error('Submission failed');
+
+      const result = await res.json() as { id: string; submittedAt: string };
+
+      setSubmitStep('escrow');
+
+      await new Promise(resolve => setTimeout(resolve, 800));
+
+      const newSubmission: InquirySubmission = {
+        id: result.id,
+        name: data.name,
+        email: data.email,
+        offerPrice: data.offerPrice,
+        venture: data.venture,
+        message: data.message,
+        submittedAt: new Date(result.submittedAt).toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+        }),
+      };
+
+      const updated = [newSubmission, ...submissions];
+      setSubmissions(updated);
+      localStorage.setItem('korao_offers', JSON.stringify(updated));
+
+      setSubmitStep('success');
+    } catch {
+      setSubmitStep('idle');
+      alert('Failed to submit offer. Please try again.');
+    }
   };
 
   const deleteSubmission = (id: string, e: React.MouseEvent) => {
