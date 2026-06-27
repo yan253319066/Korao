@@ -7,4 +7,4 @@ compatibility_flags = ["nodejs_compat"]
 [[d1_databases]]
 binding = "DB"
 database_name = "korao-inquiries"
-database_id = ""
+database_id = "b6d3d9c2-045f-43d3-90d0-4f74eb291c44"
