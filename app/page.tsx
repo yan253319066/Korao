@@ -3,20 +3,18 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
-  X, 
   Clock, 
   Globe, 
-  Send, 
-  CheckCircle, 
-  ArrowRight, 
-  Coins, 
-  Mail, 
-  User, 
-  MessageSquare,
-  Building,
   History,
-  Trash2
+  ArrowRight
 } from 'lucide-react';
+
+import { ArrowUpRightIcon, PlayIcon } from './components/Icons';
+import { FadingVideo } from './components/FadingVideo';
+import { BlurText } from './components/BlurText';
+import { ValueExplorer } from './components/ValueExplorer';
+import { InquiryModal } from './components/InquiryModal';
+import { OfferHistoryDrawer } from './components/OfferHistoryDrawer';
 
 // Suppress benign Framer Motion, key, and hydration warnings in developer console
 if (typeof window !== 'undefined') {
@@ -34,212 +32,6 @@ if (typeof window !== 'undefined') {
   };
 }
 
-// Custom icons based on precise SVG specifications in the prompt
-const ArrowUpRightIcon = ({ className = "w-6 h-6" }: { className?: string }) => (
-  <svg 
-    className={className} 
-    viewBox="0 0 24 24" 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth="2" 
-    strokeLinecap="round" 
-    strokeLinejoin="round"
-  >
-    <path d="M7 17L17 7" />
-    <path d="M7 7h10v10" />
-  </svg>
-);
-
-const PlayIcon = ({ className = "w-4 h-4" }: { className?: string }) => (
-  <svg 
-    className={className} 
-    viewBox="0 0 24 24" 
-    fill="currentColor"
-  >
-    <polygon points="6,4 20,12 6,20" />
-  </svg>
-);
-
-// FadingVideo component (custom JS crossfade, no CSS transitions)
-interface FadingVideoProps {
-  src: string;
-  className?: string;
-  style?: React.CSSProperties;
-}
-
-const FadingVideo: React.FC<FadingVideoProps> = ({ src, className, style }) => {
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const rafIdRef = useRef<number | null>(null);
-  const fadingOutRef = useRef<boolean>(false);
-
-  const fadeTo = (targetOpacity: number, duration: number = 500) => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    if (rafIdRef.current !== null) {
-      cancelAnimationFrame(rafIdRef.current);
-    }
-
-    const startOpacity = parseFloat(video.style.opacity || '0');
-    const startTime = performance.now();
-
-    const animate = (now: number) => {
-      const elapsed = now - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      const currentOpacity = startOpacity + (targetOpacity - startOpacity) * progress;
-      video.style.opacity = currentOpacity.toString();
-
-      if (progress < 1) {
-        rafIdRef.current = requestAnimationFrame(animate);
-      } else {
-        rafIdRef.current = null;
-      }
-    };
-
-    rafIdRef.current = requestAnimationFrame(animate);
-  };
-
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    // Reset initial style opacity to 0
-    video.style.opacity = '0';
-    fadingOutRef.current = false;
-
-    const handleLoadedData = () => {
-      video.style.opacity = '0';
-      video.play().catch(err => console.log("Video play failed or interrupted:", err));
-      fadeTo(1, 500);
-    };
-
-    const handleTimeUpdate = () => {
-      if (!video.duration || video.duration <= 0) return;
-      const remaining = video.duration - video.currentTime;
-      if (!fadingOutRef.current && remaining <= 0.55 && remaining > 0) {
-        fadingOutRef.current = true;
-        fadeTo(0, 500);
-      }
-    };
-
-    const handleEnded = () => {
-      video.style.opacity = '0';
-      setTimeout(() => {
-        if (!videoRef.current) return;
-        videoRef.current.currentTime = 0;
-        videoRef.current.play().catch(err => console.log("Video loop play failed:", err));
-        fadingOutRef.current = false;
-        fadeTo(1, 500);
-      }, 100);
-    };
-
-    video.addEventListener('loadeddata', handleLoadedData);
-    video.addEventListener('timeupdate', handleTimeUpdate);
-    video.addEventListener('ended', handleEnded);
-
-    // If source changes, force load
-    video.load();
-
-    return () => {
-      if (rafIdRef.current !== null) {
-        cancelAnimationFrame(rafIdRef.current);
-      }
-      video.removeEventListener('loadeddata', handleLoadedData);
-      video.removeEventListener('timeupdate', handleTimeUpdate);
-      video.removeEventListener('ended', handleEnded);
-    };
-  }, [src]);
-
-  return (
-    <video
-      ref={videoRef}
-      src={src}
-      className={className}
-      style={{ ...style, opacity: 0 }}
-      autoPlay
-      muted
-      playsInline
-      preload="auto"
-    />
-  );
-};
-
-// BlurText component (word-by-word blur-in)
-interface BlurTextProps {
-  text: string;
-  className?: string;
-}
-
-const BlurText: React.FC<BlurTextProps> = ({ text, className }) => {
-  const containerRef = useRef<HTMLParagraphElement | null>(null);
-  const [isInView, setIsInView] = useState(false);
-
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsInView(true);
-        }
-      },
-      { threshold: 0.1 }
-    );
-
-    observer.observe(el);
-    return () => {
-      observer.unobserve(el);
-    };
-  }, []);
-
-  const words = text.split(' ');
-
-  return (
-    <p
-      ref={containerRef}
-      className={className}
-      style={{
-        display: 'flex',
-        flexWrap: 'wrap',
-        justifyContent: 'center',
-        rowGap: '0.15em',
-      }}
-    >
-      {words.map((word, i) => {
-        const delay = (i * 100) / 1000;
-        return (
-          <motion.span
-            key={i}
-            initial={{ filter: 'blur(10px)', opacity: 0, y: 50 }}
-            animate={
-              isInView
-                ? {
-                    filter: ['blur(10px)', 'blur(5px)', 'blur(0px)'],
-                    opacity: [0, 0.5, 1],
-                    y: [50, -5, 0],
-                  }
-                : {}
-            }
-            transition={{
-              duration: 0.7,
-              times: [0, 0.5, 1],
-              ease: 'easeOut',
-              delay: delay,
-            }}
-            style={{
-              display: 'inline-block',
-              marginRight: '0.28em',
-            }}
-          >
-            {word}
-          </motion.span>
-        );
-      })}
-    </p>
-  );
-};
-
 // Types for inquiry persistence
 interface InquirySubmission {
   id: string;
@@ -254,23 +46,22 @@ interface InquirySubmission {
 export default function Home() {
   const [isInquiryOpen, setIsInquiryOpen] = useState(false);
   const [isOfferHistoryOpen, setIsOfferHistoryOpen] = useState(false);
-  
-  // Form States
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [offerPrice, setOfferPrice] = useState('125,000');
-  const [venture, setVenture] = useState('');
-  const [message, setMessage] = useState('');
-  const [emailError, setEmailError] = useState('');
-  const [priceError, setPriceError] = useState('');
+  const [activeNav, setActiveNav] = useState<'home' | 'domain-info' | 'brand-value' | 'ai-vertical'>('home');
+  const [activeDetail, setActiveDetail] = useState<'brand' | 'vertical' | 'premium'>('brand');
+  const [previewSuffix, setPreviewSuffix] = useState('Labs');
+  const [apiRoute, setApiRoute] = useState<'agents' | 'models' | 'chat'>('agents');
   
   // Submit state flow
   const [submitStep, setSubmitStep] = useState<'idle' | 'validating' | 'escrow' | 'success'>('idle');
   const [submissions, setSubmissions] = useState<InquirySubmission[]>([]);
 
-  // Refs for smooth scroll
+  // Refs for smooth scroll & active tracking
   const heroRef = useRef<HTMLElement | null>(null);
   const valueRef = useRef<HTMLElement | null>(null);
+  const domainInfoRef = useRef<HTMLDivElement | null>(null);
+  const brandValueRef = useRef<HTMLDivElement | null>(null);
+  const aiVerticalRef = useRef<HTMLDivElement | null>(null);
+  const detailSectionRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     // Load existing offers from local storage
@@ -289,37 +80,56 @@ export default function Home() {
     }
   }, []);
 
-  const handleScroll = (ref: React.RefObject<HTMLElement | null>) => {
+  // Track active scroll sections
+  useEffect(() => {
+    const observerOptions = {
+      root: null,
+      rootMargin: '-30% 0px -40% 0px', // Focused center region
+      threshold: 0.05,
+    };
+
+    const handleIntersection = (entries: IntersectionObserverEntry[]) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          if (entry.target.id === 'hero-section') {
+            setActiveNav('home');
+          } else if (entry.target.id === 'domain-info-header') {
+            setActiveNav('domain-info');
+          } else if (entry.target.id === 'brand-value-card') {
+            setActiveNav('brand-value');
+          } else if (entry.target.id === 'ai-vertical-card') {
+            setActiveNav('ai-vertical');
+          }
+        }
+      });
+    };
+
+    const observer = new IntersectionObserver(handleIntersection, observerOptions);
+
+    if (heroRef.current) observer.observe(heroRef.current);
+    if (domainInfoRef.current) observer.observe(domainInfoRef.current);
+    if (brandValueRef.current) observer.observe(brandValueRef.current);
+    if (aiVerticalRef.current) observer.observe(aiVerticalRef.current);
+
+    return () => observer.disconnect();
+  }, []);
+
+  const handleScroll = (
+    ref: React.RefObject<HTMLElement | HTMLDivElement | null>,
+    block: ScrollIntoViewOptions['block'] = 'start'
+  ) => {
     if (ref.current) {
-      ref.current.scrollIntoView({ behavior: 'smooth' });
+      ref.current.scrollIntoView({ behavior: 'smooth', block });
     }
   };
 
-  const handleInquirySubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setEmailError('');
-    setPriceError('');
-
-    let hasError = false;
-
-    // Validate email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setEmailError('Please enter a valid email address.');
-      hasError = true;
-    }
-
-    // Validate offer price (strip commas, spaces, currency symbols)
-    const cleanPriceStr = offerPrice.replace(/[$,\s]/g, '');
-    const priceNum = parseFloat(cleanPriceStr);
-    if (isNaN(priceNum) || priceNum <= 0) {
-      setPriceError('Please enter a valid positive offer price.');
-      hasError = true;
-    }
-
-    if (hasError || !name || !email || !offerPrice) return;
-
-    // Trigger simulation sequence
+  const handleInquirySubmit = (data: {
+    name: string;
+    email: string;
+    offerPrice: string;
+    venture: string;
+    message: string;
+  }) => {
     setSubmitStep('validating');
 
     setTimeout(() => {
@@ -328,11 +138,11 @@ export default function Home() {
       setTimeout(() => {
         const newSubmission: InquirySubmission = {
           id: Math.random().toString(36).substring(2, 9),
-          name,
-          email,
-          offerPrice,
-          venture: venture || 'Not specified',
-          message: message || 'Interested in acquiring korao.ai',
+          name: data.name,
+          email: data.email,
+          offerPrice: data.offerPrice,
+          venture: data.venture,
+          message: data.message,
           submittedAt: new Date().toLocaleDateString('en-US', {
             month: 'short',
             day: 'numeric',
@@ -358,15 +168,9 @@ export default function Home() {
     localStorage.setItem('korao_offers', JSON.stringify(updated));
   };
 
-  const resetForm = () => {
-    setName('');
-    setEmail('');
-    setOfferPrice('125,000');
-    setVenture('');
-    setMessage('');
+  const openInquiryModal = () => {
     setSubmitStep('idle');
-    setEmailError('');
-    setPriceError('');
+    setIsInquiryOpen(true);
   };
 
   const entranceTransition = {
@@ -392,38 +196,26 @@ export default function Home() {
         <div className="hidden md:flex items-center gap-1 py-1.5 px-2 rounded-full liquid-glass">
           <button 
             onClick={() => handleScroll(heroRef)} 
-            className="px-4 py-2 text-xs lg:text-sm font-medium text-white/90 hover:text-white transition-colors duration-200 font-body cursor-pointer"
+            className={`px-4 py-2 text-xs lg:text-sm font-medium transition-all duration-300 font-body cursor-pointer rounded-full ${activeNav === 'home' && !isInquiryOpen ? 'bg-white/10 text-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.15)] font-semibold' : 'text-white/60 hover:text-white hover:bg-white/5'}`}
           >
             Home
           </button>
           <button 
-            onClick={() => handleScroll(valueRef)} 
-            className="px-4 py-2 text-xs lg:text-sm font-medium text-white/90 hover:text-white transition-colors duration-200 font-body cursor-pointer"
+            onClick={() => { setActiveDetail('premium'); handleScroll(valueRef, 'start'); }} 
+            className={`px-4 py-2 text-xs lg:text-sm font-medium transition-all duration-300 font-body cursor-pointer rounded-full ${activeNav === 'domain-info' && !isInquiryOpen ? 'bg-white/10 text-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.15)] font-semibold' : 'text-white/60 hover:text-white hover:bg-white/5'}`}
           >
             Domain Info
           </button>
           <button 
-            onClick={() => handleScroll(valueRef)} 
-            className="px-4 py-2 text-xs lg:text-sm font-medium text-white/90 hover:text-white transition-colors duration-200 font-body cursor-pointer"
-          >
-            Brand Value
-          </button>
-          <button 
-            onClick={() => handleScroll(valueRef)} 
-            className="px-4 py-2 text-xs lg:text-sm font-medium text-white/90 hover:text-white transition-colors duration-200 font-body cursor-pointer"
-          >
-            AI Vertical
-          </button>
-          <button 
-            onClick={() => { resetForm(); setIsInquiryOpen(true); }} 
-            className="px-4 py-2 text-xs lg:text-sm font-medium text-white/90 hover:text-white transition-colors duration-200 font-body cursor-pointer"
+            onClick={openInquiryModal} 
+            className={`px-4 py-2 text-xs lg:text-sm font-medium transition-all duration-300 font-body cursor-pointer rounded-full ${isInquiryOpen ? 'bg-white/10 text-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.15)] font-semibold' : 'text-white/60 hover:text-white hover:bg-white/5'}`}
           >
             Inquiry
           </button>
           
           <button 
-            onClick={() => { resetForm(); setIsInquiryOpen(true); }} 
-            className="ml-2 bg-white text-black text-xs font-semibold px-4 py-2 rounded-full flex items-center gap-1.5 hover:bg-white/95 hover:scale-102 transition-all duration-300 whitespace-nowrap cursor-pointer"
+            onClick={openInquiryModal} 
+            className={`ml-2 bg-white text-black text-xs font-semibold px-4 py-2 rounded-full flex items-center gap-1.5 hover:bg-white/95 hover:scale-102 transition-all duration-300 whitespace-nowrap cursor-pointer ${isInquiryOpen ? 'ring-2 ring-white/50' : ''}`}
           >
             Secure This Domain
             <ArrowUpRightIcon className="w-3.5 h-3.5 stroke-[2.5]" />
@@ -447,7 +239,7 @@ export default function Home() {
 
           {/* Contact Button for Mobile only */}
           <button 
-            onClick={() => { resetForm(); setIsInquiryOpen(true); }} 
+            onClick={openInquiryModal} 
             className="md:hidden rounded-full liquid-glass px-4 py-2.5 text-xs font-medium text-white/90 font-body flex items-center gap-1"
           >
             Secure Domain
@@ -460,29 +252,29 @@ export default function Home() {
       <section 
         ref={heroRef}
         id="hero-section" 
-        className="relative w-full min-h-screen flex flex-col justify-between overflow-hidden bg-[#000] z-10"
+        className="scroll-mt-28 relative w-full min-h-screen md:h-screen md:min-h-0 flex flex-col justify-between bg-[#000] z-10 overflow-hidden"
       >
         {/* Background Video */}
         <div className="absolute inset-0 w-full h-full pointer-events-none overflow-hidden z-0">
           <FadingVideo 
             src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260418_080021_d598092b-c4c2-4e53-8e46-94cf9064cd50.mp4"
-            className="absolute left-1/2 top-0 -translate-x-1/2 object-cover object-top"
-            style={{ width: "120%", height: "120%" }}
+            className="absolute inset-0 w-full h-full object-cover object-center scale-110"
+            style={{ width: '100%', height: '100%', minWidth: '100%', minHeight: '100%', objectFit: 'cover' }}
           />
         </div>
 
         {/* Padding for fixed Nav */}
-        <div className="w-full h-24" />
+        <div className="w-full h-16 md:h-20" />
 
         {/* Hero Main Content */}
-        <div className="flex-1 w-full max-w-4xl mx-auto flex flex-col items-center justify-center text-center px-4 md:px-8 py-10 z-10">
+        <div className="flex-1 w-full max-w-4xl mx-auto flex flex-col items-center justify-center text-center px-4 md:px-8 py-4 md:py-6 z-10">
           
           {/* Badge */}
           <motion.div 
             initial={{ filter: 'blur(10px)', opacity: 0, y: 20 }}
             animate={{ filter: 'blur(0px)', opacity: 1, y: 0 }}
             transition={{ ...entranceTransition, delay: 0.4 }}
-            className="inline-flex items-center p-1 pr-4 rounded-full liquid-glass mb-6"
+            className="inline-flex items-center p-1 pr-4 rounded-full liquid-glass mb-4 md:mb-5"
           >
             <span className="bg-white text-black text-[10px] md:text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full mr-3 leading-none">
               Premium
@@ -493,10 +285,10 @@ export default function Home() {
           </motion.div>
 
           {/* Headline (BlurText) */}
-          <div className="mb-4">
+          <div className="mb-3 md:mb-4">
             <BlurText 
               text="Korao.ai — Define Your AI Future" 
-              className="text-5xl md:text-7xl lg:text-[5.5rem] font-heading italic text-white leading-[0.95] max-w-3xl justify-center tracking-[-4px]"
+              className="text-4xl md:text-6xl lg:text-[5rem] font-heading italic text-white leading-[0.95] max-w-3xl justify-center tracking-[-4px]"
             />
           </div>
 
@@ -505,7 +297,7 @@ export default function Home() {
             initial={{ filter: 'blur(10px)', opacity: 0, y: 20 }}
             animate={{ filter: 'blur(0px)', opacity: 1, y: 0 }}
             transition={{ ...entranceTransition, delay: 0.8 }}
-            className="text-base md:text-lg text-white/90 max-w-2xl font-body font-light leading-relaxed mb-8 px-4"
+            className="text-sm md:text-base lg:text-lg text-white/90 max-w-2xl font-body font-light leading-relaxed mb-6 md:mb-8 px-4"
           >
             A concise, brandable, and future-ready .ai domain. Perfect for artificial intelligence startups, AI agencies, model labs, and next-generation tech products.
           </motion.p>
@@ -515,11 +307,11 @@ export default function Home() {
             initial={{ filter: 'blur(10px)', opacity: 0, y: 20 }}
             animate={{ filter: 'blur(0px)', opacity: 1, y: 0 }}
             transition={{ ...entranceTransition, delay: 1.1 }}
-            className="flex flex-col sm:flex-row items-center gap-6"
+            className="flex flex-col sm:flex-row items-center gap-4 md:gap-6"
           >
             <button 
-              onClick={() => { resetForm(); setIsInquiryOpen(true); }}
-              className="liquid-glass-strong hover:scale-103 active:scale-98 text-white rounded-full px-8 py-3.5 text-sm font-semibold tracking-wide flex items-center gap-2 cursor-pointer transition-all duration-300 group"
+              onClick={openInquiryModal}
+              className="liquid-glass-strong hover:scale-103 active:scale-98 text-white rounded-full px-8 py-3 text-sm font-semibold tracking-wide flex items-center gap-2 cursor-pointer transition-all duration-300 group"
             >
               Start Domain Inquiry
               <ArrowUpRightIcon className="w-5 h-5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform duration-300" />
@@ -540,27 +332,27 @@ export default function Home() {
             initial={{ filter: 'blur(10px)', opacity: 0, y: 20 }}
             animate={{ filter: 'blur(0px)', opacity: 1, y: 0 }}
             transition={{ ...entranceTransition, delay: 1.3 }}
-            className="flex flex-wrap justify-center gap-6 mt-12 w-full"
+            className="flex flex-wrap justify-center gap-4 md:gap-6 mt-6 md:mt-8 w-full"
           >
             {/* Card 1 */}
-            <div className="liquid-glass p-6 w-[220px] rounded-[1.25rem] text-left flex flex-col justify-between h-44 hover:translate-y-[-2px] transition-transform duration-300">
-              <div className="w-9 h-9 rounded-full bg-white/5 flex items-center justify-center border border-white/10">
-                <Clock className="w-4 h-4 text-white/90" />
+            <div className="liquid-glass p-4 md:p-5 w-[180px] md:w-[220px] rounded-[1.25rem] text-left flex flex-col justify-between h-32 md:h-36 hover:translate-y-[-2px] transition-transform duration-300">
+              <div className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-white/5 flex items-center justify-center border border-white/10">
+                <Clock className="w-3.5 h-3.5 md:w-4 md:h-4 text-white/90" />
               </div>
               <div>
-                <h4 className="font-heading italic text-white text-3xl tracking-[-1px] leading-none">Ultra Rare</h4>
-                <p className="text-[11px] text-white/70 font-body font-light mt-2 tracking-wide">Short Memorable AI Brand</p>
+                <h4 className="font-heading italic text-white text-2xl md:text-3xl tracking-[-1px] leading-none">Ultra Rare</h4>
+                <p className="text-[10px] md:text-[11px] text-white/70 font-body font-light mt-1.5 md:mt-2 tracking-wide">Short Memorable AI Brand</p>
               </div>
             </div>
 
             {/* Card 2 */}
-            <div className="liquid-glass p-6 w-[220px] rounded-[1.25rem] text-left flex flex-col justify-between h-44 hover:translate-y-[-2px] transition-transform duration-300">
-              <div className="w-9 h-9 rounded-full bg-white/5 flex items-center justify-center border border-white/10">
-                <Globe className="w-4 h-4 text-white/90" />
+            <div className="liquid-glass p-4 md:p-5 w-[180px] md:w-[220px] rounded-[1.25rem] text-left flex flex-col justify-between h-32 md:h-36 hover:translate-y-[-2px] transition-transform duration-300">
+              <div className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-white/5 flex items-center justify-center border border-white/10">
+                <Globe className="w-3.5 h-3.5 md:w-4 md:h-4 text-white/90" />
               </div>
               <div>
-                <h4 className="font-heading italic text-white text-3xl tracking-[-1px] leading-none">Global Appeal</h4>
-                <p className="text-[11px] text-white/70 font-body font-light mt-2 tracking-wide">Perfect For Global AI Business</p>
+                <h4 className="font-heading italic text-white text-2xl md:text-3xl tracking-[-1px] leading-none">Global Appeal</h4>
+                <p className="text-[10px] md:text-[11px] text-white/70 font-body font-light mt-1.5 md:mt-2 tracking-wide">Perfect For Global AI Business</p>
               </div>
             </div>
           </motion.div>
@@ -572,15 +364,15 @@ export default function Home() {
           initial={{ filter: 'blur(10px)', opacity: 0, y: 20 }}
           animate={{ filter: 'blur(0px)', opacity: 1, y: 0 }}
           transition={{ ...entranceTransition, delay: 1.4 }}
-          className="w-full flex flex-col items-center gap-6 pb-12 z-10 px-4"
+          className="w-full flex flex-col items-center gap-3 md:gap-4 pb-6 md:pb-8 z-10 px-4"
         >
           {/* Tagline Badge */}
-          <div className="liquid-glass rounded-full px-5 py-2 text-xs font-medium text-white/80 tracking-wide font-body">
+          <div className="liquid-glass rounded-full px-4 md:px-5 py-1.5 md:py-2 text-[10px] md:text-xs font-medium text-white/80 tracking-wide font-body">
             Ideal for AI Startups, Model Developers & Tech Venture Brands
           </div>
 
           {/* Row of Industry Tags */}
-          <div className="flex flex-wrap justify-center items-center gap-x-12 gap-y-3 font-heading italic text-2xl md:text-3xl text-white/70 tracking-tight">
+          <div className="flex flex-wrap justify-center items-center gap-x-8 md:gap-x-12 gap-y-1.5 font-heading italic text-xl md:text-2xl lg:text-3xl text-white/70 tracking-tight">
             <span>AI</span>
             <span className="text-white/20 font-sans text-xs font-light">·</span>
             <span>Tech</span>
@@ -598,21 +390,24 @@ export default function Home() {
       <section 
         ref={valueRef}
         id="value-section" 
-        className="relative w-full min-h-screen flex flex-col justify-between overflow-hidden bg-[#000] z-10 border-t border-white/5"
+        className="relative scroll-mt-[-1px] w-full min-h-screen flex flex-col justify-between bg-[#000] z-10 border-t border-white/5"
       >
         {/* Background Video */}
         <div className="absolute inset-0 w-full h-full pointer-events-none overflow-hidden z-0">
-          <FadingVideo 
-            src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260418_094631_d30ab262-45ee-4b7d-99f3-5d5848c8ef13.mp4"
-            className="absolute inset-0 w-full h-full object-cover"
-          />
+          <div className="sticky top-0 left-0 w-full h-screen">
+            <FadingVideo 
+              src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260418_094631_d30ab262-45ee-4b7d-99f3-5d5848c8ef13.mp4"
+              className="absolute inset-0 w-full h-full object-cover object-center scale-110"
+              style={{ width: '100%', height: '100%', minWidth: '100%', minHeight: '100%', objectFit: 'cover' }}
+            />
+          </div>
         </div>
 
         {/* Content Wrapper */}
         <div className="relative z-10 px-6 md:px-16 lg:px-20 pt-24 pb-12 flex flex-col min-h-screen w-full max-w-7xl mx-auto">
           
           {/* Header Section */}
-          <div className="mb-auto max-w-2xl text-left">
+          <div ref={domainInfoRef} id="domain-info-header" className="scroll-mt-28 mb-auto max-w-2xl text-left">
             <span className="text-xs md:text-sm font-semibold tracking-[0.2em] uppercase text-white/80 mb-4 block font-body">
               {"// Domain Strength"}
             </span>
@@ -638,11 +433,14 @@ export default function Home() {
           >
             {/* Card 1 */}
             <motion.div 
+              ref={brandValueRef}
+              id="brand-value-card"
               variants={{
                 hidden: { opacity: 0, y: 30, filter: 'blur(8px)' },
                 visible: { opacity: 1, y: 0, filter: 'blur(0px)', transition: entranceTransition }
               }}
-              className="liquid-glass rounded-[1.25rem] p-6 min-h-[360px] flex flex-col justify-between hover:scale-[1.02] transition-transform duration-300"
+              onClick={() => { setActiveDetail('brand'); handleScroll(detailSectionRef, 'start'); }}
+              className={`scroll-mt-28 rounded-[1.25rem] p-6 min-h-[360px] flex flex-col justify-between hover:scale-[1.02] transition-all duration-300 cursor-pointer border ${activeDetail === 'brand' ? 'border-white bg-white/[0.08] shadow-[0_0_25px_rgba(255,255,255,0.05)]' : 'border-white/10 bg-white/5 hover:bg-white/[0.07] hover:border-white/25'}`}
             >
               {/* Card Top Row */}
               <div className="flex items-start justify-between gap-4">
@@ -663,22 +461,33 @@ export default function Home() {
 
               {/* Card Bottom Row */}
               <div className="mt-6">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <span className={`w-1.5 h-1.5 rounded-full ${activeDetail === 'brand' ? 'bg-emerald-400' : 'bg-white/30'}`} />
+                  <span className="text-[10px] uppercase tracking-wider font-mono text-white/40">Brand Value Card</span>
+                </div>
                 <h3 className="font-heading italic text-white text-3xl tracking-[-1px] leading-none">
                   Brandable Simplicity
                 </h3>
                 <p className="mt-3 text-sm text-white/80 font-body font-light leading-snug max-w-[32ch]">
                   Korao delivers a clean, modern, and unique brand name. Short, spellable, and instantly memorable — ideal for building a standalone AI brand identity.
                 </p>
+                <div className="mt-4 flex items-center gap-1 text-[11px] text-white/50 group-hover:text-white transition-colors">
+                  <span>Explore Brand Metrics</span>
+                  <ArrowRight className="w-3 h-3" />
+                </div>
               </div>
             </motion.div>
 
             {/* Card 2 */}
             <motion.div 
+              ref={aiVerticalRef}
+              id="ai-vertical-card"
               variants={{
                 hidden: { opacity: 0, y: 30, filter: 'blur(8px)' },
                 visible: { opacity: 1, y: 0, filter: 'blur(0px)', transition: entranceTransition }
               }}
-              className="liquid-glass rounded-[1.25rem] p-6 min-h-[360px] flex flex-col justify-between hover:scale-[1.02] transition-transform duration-300"
+              onClick={() => { setActiveDetail('vertical'); handleScroll(detailSectionRef, 'start'); }}
+              className={`scroll-mt-28 rounded-[1.25rem] p-6 min-h-[360px] flex flex-col justify-between hover:scale-[1.02] transition-all duration-300 cursor-pointer border ${activeDetail === 'vertical' ? 'border-white bg-white/[0.08] shadow-[0_0_25px_rgba(255,255,255,0.05)]' : 'border-white/10 bg-white/5 hover:bg-white/[0.07] hover:border-white/25'}`}
             >
               {/* Card Top Row */}
               <div className="flex items-start justify-between gap-4">
@@ -699,12 +508,20 @@ export default function Home() {
 
               {/* Card Bottom Row */}
               <div className="mt-6">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <span className={`w-1.5 h-1.5 rounded-full ${activeDetail === 'vertical' ? 'bg-blue-400' : 'bg-white/30'}`} />
+                  <span className="text-[10px] uppercase tracking-wider font-mono text-white/40">AI Niche Card</span>
+                </div>
                 <h3 className="font-heading italic text-white text-3xl tracking-[-1px] leading-none">
                   AI Vertical Fit
                 </h3>
                 <p className="mt-3 text-sm text-white/80 font-body font-light leading-snug max-w-[32ch]">
                   Natively suited for artificial intelligence businesses, large language models, AI tools, automation platforms, and intelligent SaaS products.
                 </p>
+                <div className="mt-4 flex items-center gap-1 text-[11px] text-white/50 group-hover:text-white transition-colors">
+                  <span>Interactive API Sandbox</span>
+                  <ArrowRight className="w-3 h-3" />
+                </div>
               </div>
             </motion.div>
 
@@ -714,7 +531,8 @@ export default function Home() {
                 hidden: { opacity: 0, y: 30, filter: 'blur(8px)' },
                 visible: { opacity: 1, y: 0, filter: 'blur(0px)', transition: entranceTransition }
               }}
-              className="liquid-glass rounded-[1.25rem] p-6 min-h-[360px] flex flex-col justify-between hover:scale-[1.02] transition-transform duration-300"
+              onClick={() => { setActiveDetail('premium'); handleScroll(detailSectionRef, 'start'); }}
+              className={`rounded-[1.25rem] p-6 min-h-[360px] flex flex-col justify-between hover:scale-[1.02] transition-all duration-300 cursor-pointer border ${activeDetail === 'premium' ? 'border-white bg-white/[0.08] shadow-[0_0_25px_rgba(255,255,255,0.05)]' : 'border-white/10 bg-white/5 hover:bg-white/[0.07] hover:border-white/25'}`}
             >
               {/* Card Top Row */}
               <div className="flex items-start justify-between gap-4">
@@ -735,23 +553,79 @@ export default function Home() {
 
               {/* Card Bottom Row */}
               <div className="mt-6">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <span className={`w-1.5 h-1.5 rounded-full ${activeDetail === 'premium' ? 'bg-purple-400' : 'bg-white/30'}`} />
+                  <span className="text-[10px] uppercase tracking-wider font-mono text-white/40">Market Premium Card</span>
+                </div>
                 <h3 className="font-heading italic text-white text-3xl tracking-[-1px] leading-none">
                   Premium .ai Investment
                 </h3>
                 <p className="mt-3 text-sm text-white/80 font-body font-light leading-snug max-w-[32ch]">
                   .ai is the official top-level domain for the global AI industry. Limited premium short names remain, making Korao.ai a rare long-term digital asset.
                 </p>
+                <div className="mt-4 flex items-center gap-1 text-[11px] text-white/50 group-hover:text-white transition-colors">
+                  <span>Verify Market Valuations</span>
+                  <ArrowRight className="w-3 h-3" />
+                </div>
               </div>
             </motion.div>
           </motion.div>
 
+          {/* Minimalist interactive guide at bottom of Section 2 */}
+          <div className="mt-auto pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-white/40 border-t border-white/5 font-body">
+            <span>💡 Click any card above to explore its core features & interact with live API tests below</span>
+            <div 
+              onClick={() => handleScroll(detailSectionRef, 'start')}
+              className="flex items-center gap-1.5 animate-pulse cursor-pointer hover:text-white/80 transition-colors duration-200"
+            >
+              <span>Scroll down for Explorer</span>
+              <span className="font-sans">↓</span>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      {/* SECTION 3 - INTERACTIVE EXPLORER */}
+      <section 
+        ref={detailSectionRef}
+        id="detail-section" 
+        className="relative scroll-mt-[-1px] w-full min-h-screen flex flex-col justify-between bg-[#000] z-10 border-t border-white/5"
+      >
+        {/* Background Video */}
+        <div className="absolute inset-0 w-full h-full pointer-events-none overflow-hidden z-0">
+          <div className="sticky top-0 left-0 w-full h-screen">
+            <FadingVideo 
+              src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260418_094631_d30ab262-45ee-4b7d-99f3-5d5848c8ef13.mp4"
+              className="absolute inset-0 w-full h-full object-cover object-center scale-110"
+              style={{ width: '100%', height: '100%', minWidth: '100%', minHeight: '100%', objectFit: 'cover' }}
+            />
+          </div>
+        </div>
+
+        {/* Content Wrapper */}
+        <div className="relative z-10 px-6 md:px-16 lg:px-20 pt-24 pb-12 flex flex-col min-h-screen w-full max-w-7xl mx-auto justify-between">
+          
+          {/* Centered ValueExplorer Card */}
+          <div className="flex-grow flex flex-col justify-center my-auto w-full">
+            <ValueExplorer 
+              activeDetail={activeDetail}
+              setActiveDetail={setActiveDetail}
+              previewSuffix={previewSuffix}
+              setPreviewSuffix={setPreviewSuffix}
+              apiRoute={apiRoute}
+              setApiRoute={setApiRoute}
+              detailSectionRef={detailSectionRef}
+            />
+          </div>
+
           {/* Minimalist section footer */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-white/10 mt-16 pt-8 text-xs text-white/50 font-body">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-white/10 mt-12 pt-8 text-xs text-white/50 font-body">
             <span>© {new Date().getFullYear()} Korao.ai Premium Domain Registry. All rights reserved.</span>
             <div className="flex items-center gap-6">
               <span className="text-white/30 font-serif text-xs italic">Escrow secured by Escrow.com or Dan.com</span>
               <button 
-                onClick={() => { resetForm(); setIsInquiryOpen(true); }}
+                onClick={openInquiryModal}
                 className="text-white/70 hover:text-white transition-colors duration-200 flex items-center gap-1 font-semibold cursor-pointer"
               >
                 Acquire Domain Now
@@ -766,319 +640,28 @@ export default function Home() {
       {/* MODAL - DOMAIN INQUIRY */}
       <AnimatePresence>
         {isInquiryOpen && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl"
-            id="inquiry-modal-backdrop"
-          >
-            <motion.div 
-              initial={{ scale: 0.95, opacity: 0, y: 15 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.95, opacity: 0, y: 15 }}
-              transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-              className="relative w-full max-w-lg liquid-glass-strong rounded-[2rem] p-6 md:p-8 border border-white/15 shadow-2xl overflow-hidden"
-              id="inquiry-modal-content"
-            >
-              
-              {/* Background gradient hint */}
-              <div className="absolute top-0 left-1/4 right-1/4 h-24 bg-white/5 blur-3xl rounded-full pointer-events-none" />
-
-              {/* Close Button */}
-              <button 
-                onClick={() => setIsInquiryOpen(false)}
-                className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:scale-105 active:scale-95 transition-all duration-200 text-white/80 hover:text-white cursor-pointer z-10"
-                title="Close modal"
-              >
-                <X className="w-4 h-4" />
-              </button>
-
-              {/* Modal Body */}
-              <div className="z-10 relative">
-                
-                {submitStep === 'idle' && (
-                  <>
-                    <div className="mb-6 text-left">
-                      <span className="text-[10px] tracking-widest font-semibold uppercase text-white/50 block mb-1">
-                        Secure Acquisition
-                      </span>
-                      <h3 className="font-heading italic text-white text-4xl leading-none">
-                        Acquire korao.ai
-                      </h3>
-                      <p className="text-xs text-white/70 font-body mt-2 font-light">
-                        Submit your private offer below. Our premium domain broker handles all escrow transfers with absolute confidentiality.
-                      </p>
-                    </div>
-
-                    <form onSubmit={handleInquirySubmit} className="space-y-4">
-                      
-                      {/* Name input */}
-                      <div className="space-y-1.5 text-left">
-                        <label className="text-xs font-medium text-white/70 font-body block">Full Name</label>
-                        <div className="relative">
-                          <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-white/40">
-                            <User className="w-4 h-4" />
-                          </span>
-                          <input 
-                            type="text" 
-                            required
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            placeholder="Alex Thorne"
-                            className="w-full bg-white/5 border border-white/10 rounded-full py-2.5 pl-10 pr-4 text-sm text-white placeholder-white/35 focus:outline-none focus:border-white/30 focus:bg-white/10 transition-all font-body"
-                          />
-                        </div>
-                      </div>
-
-                      {/* Email input */}
-                      <div className="space-y-1.5 text-left">
-                        <label className="text-xs font-medium text-white/70 font-body block">Corporate Email</label>
-                        <div className="relative">
-                          <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-white/40">
-                            <Mail className="w-4 h-4" />
-                          </span>
-                          <input 
-                            type="email" 
-                            required
-                            value={email}
-                            onChange={(e) => {
-                              setEmail(e.target.value);
-                              if (emailError) setEmailError('');
-                            }}
-                            placeholder="alex@ventures.com"
-                            className={`w-full bg-white/5 border ${emailError ? 'border-red-500/50' : 'border-white/10'} rounded-full py-2.5 pl-10 pr-4 text-sm text-white placeholder-white/35 focus:outline-none focus:border-white/30 focus:bg-white/10 transition-all font-body`}
-                          />
-                        </div>
-                        {emailError && (
-                          <p className="text-red-400 text-xs mt-1 font-body pl-2">{emailError}</p>
-                        )}
-                      </div>
-
-                      {/* Offer + Venture Row */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {/* Target Offer */}
-                        <div className="space-y-1.5 text-left">
-                          <label className="text-xs font-medium text-white/70 font-body block">Target Offer (USD)</label>
-                          <div className="relative">
-                            <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-white/40 font-body text-sm font-semibold">
-                              $
-                            </span>
-                            <input 
-                              type="text" 
-                              required
-                              value={offerPrice}
-                              onChange={(e) => {
-                                setOfferPrice(e.target.value);
-                                if (priceError) setPriceError('');
-                              }}
-                              placeholder="125,000"
-                              className={`w-full bg-white/5 border ${priceError ? 'border-red-500/50' : 'border-white/10'} rounded-full py-2.5 pl-7 pr-4 text-sm text-white placeholder-white/35 font-semibold focus:outline-none focus:border-white/30 focus:bg-white/10 transition-all font-body`}
-                            />
-                          </div>
-                          {priceError && (
-                            <p className="text-red-400 text-xs mt-1 font-body pl-2">{priceError}</p>
-                          )}
-                        </div>
-
-                        {/* Venture / Organization */}
-                        <div className="space-y-1.5 text-left">
-                          <label className="text-xs font-medium text-white/70 font-body block">Venture Name</label>
-                          <div className="relative">
-                            <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-white/40">
-                              <Building className="w-4 h-4" />
-                            </span>
-                            <input 
-                              type="text" 
-                              value={venture}
-                              onChange={(e) => setVenture(e.target.value)}
-                              placeholder="NextGen AI Labs"
-                              className="w-full bg-white/5 border border-white/10 rounded-full py-2.5 pl-10 pr-4 text-sm text-white placeholder-white/35 focus:outline-none focus:border-white/30 focus:bg-white/10 transition-all font-body"
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Message */}
-                      <div className="space-y-1.5 text-left">
-                        <label className="text-xs font-medium text-white/70 font-body block">Message / Escrow Requests</label>
-                        <div className="relative">
-                          <span className="absolute top-3 left-3 flex items-start pointer-events-none text-white/40">
-                            <MessageSquare className="w-4 h-4" />
-                          </span>
-                          <textarea 
-                            rows={3}
-                            value={message}
-                            onChange={(e) => setMessage(e.target.value)}
-                            placeholder="Looking to integrate this domain immediately. Prefer Escrow.com with same-day auth transfer."
-                            className="w-full bg-white/5 border border-white/10 rounded-2xl py-2.5 pl-10 pr-4 text-sm text-white placeholder-white/35 focus:outline-none focus:border-white/30 focus:bg-white/10 transition-all font-body resize-none"
-                          />
-                        </div>
-                      </div>
-
-                      {/* Submit */}
-                      <button 
-                        type="submit"
-                        className="w-full bg-white text-black font-semibold font-body py-3 px-6 rounded-full flex items-center justify-center gap-2 hover:bg-white/90 active:scale-[0.99] hover:scale-[1.01] transition-all duration-300 mt-6 cursor-pointer"
-                      >
-                        Submit Acquisition Offer
-                        <Send className="w-4 h-4" />
-                      </button>
-
-                    </form>
-                  </>
-                )}
-
-                {/* Simulated Submission Steps */}
-                {submitStep === 'validating' && (
-                  <div className="py-12 flex flex-col items-center justify-center text-center space-y-4">
-                    <div className="relative w-16 h-16">
-                      <div className="absolute inset-0 rounded-full border-4 border-white/10" />
-                      <div className="absolute inset-0 rounded-full border-4 border-t-white animate-spin" />
-                    </div>
-                    <h3 className="font-heading italic text-2xl text-white">Verifying Brand Scarcity...</h3>
-                    <p className="text-xs text-white/60 font-body font-light max-w-xs">
-                      Connecting with the domain registry, evaluating current WHOIS holds, and initiating priority secure brokerage path.
-                    </p>
-                  </div>
-                )}
-
-                {submitStep === 'escrow' && (
-                  <div className="py-12 flex flex-col items-center justify-center text-center space-y-4">
-                    <div className="relative w-16 h-16">
-                      <div className="absolute inset-0 rounded-full border-4 border-white/10" />
-                      <div className="absolute inset-0 rounded-full border-4 border-b-white animate-spin" />
-                    </div>
-                    <h3 className="font-heading italic text-2xl text-white">Initiating Safe Escrow Protocol...</h3>
-                    <p className="text-xs text-white/60 font-body font-light max-w-xs">
-                      Configuring Dan.com & Escrow.com compatible pre-authorization locks to ensure absolute buyer and seller protection.
-                    </p>
-                  </div>
-                )}
-
-                {submitStep === 'success' && (
-                  <div className="py-8 text-center flex flex-col items-center space-y-6">
-                    <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center text-black">
-                      <CheckCircle className="w-10 h-10" />
-                    </div>
-                    <div>
-                      <h3 className="font-heading italic text-3xl text-white">Offer Received Successfully</h3>
-                      <p className="text-xs text-white/70 font-body mt-2 font-light max-w-sm mx-auto">
-                        Your offer of <strong className="text-white font-semibold font-body">${offerPrice} USD</strong> has been securely registered. A dedicated acquisition broker has been assigned to negotiate on your behalf.
-                      </p>
-                    </div>
-
-                    <div className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-left font-body text-xs space-y-1.5">
-                      <div className="flex justify-between"><span className="text-white/50">Domain Asset:</span> <span className="text-white font-medium">korao.ai</span></div>
-                      <div className="flex justify-between"><span className="text-white/50">Broker Route:</span> <span className="text-white font-medium">Secure Escrow Transfer</span></div>
-                      <div className="flex justify-between"><span className="text-white/50">Confidentiality:</span> <span className="text-white font-medium">High / Encrypted</span></div>
-                      <div className="flex justify-between"><span className="text-white/50">Target Timeframe:</span> <span className="text-white font-medium">Under 12 Hours</span></div>
-                    </div>
-
-                    <div className="flex gap-4 w-full">
-                      <button 
-                        onClick={() => {
-                          setIsInquiryOpen(false);
-                          setIsOfferHistoryOpen(true);
-                        }}
-                        className="flex-1 bg-white/10 border border-white/10 text-white font-medium py-2.5 rounded-full text-xs hover:bg-white/15 transition-all cursor-pointer"
-                      >
-                        View Offer History
-                      </button>
-                      <button 
-                        onClick={() => setIsInquiryOpen(false)}
-                        className="flex-1 bg-white text-black font-semibold py-2.5 rounded-full text-xs hover:bg-white/95 transition-all cursor-pointer"
-                      >
-                        Back to Landing Page
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-              </div>
-            </motion.div>
-          </motion.div>
+          <InquiryModal 
+            isOpen={isInquiryOpen}
+            onClose={() => setIsInquiryOpen(false)}
+            onSubmit={handleInquirySubmit}
+            submitStep={submitStep}
+            onViewHistory={() => {
+              setIsInquiryOpen(false);
+              setIsOfferHistoryOpen(true);
+            }}
+          />
         )}
       </AnimatePresence>
 
       {/* OFFERS HISTORY SIDE DRAWER */}
       <AnimatePresence>
         {isOfferHistoryOpen && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex justify-end bg-black/70 backdrop-blur-md"
-            id="history-drawer-backdrop"
-          >
-            <motion.div 
-              initial={{ x: '100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="w-full max-w-md h-full liquid-glass-strong border-l border-white/10 p-6 flex flex-col justify-between"
-              id="history-drawer-content"
-            >
-              
-              <div>
-                {/* Header */}
-                <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-6">
-                  <div className="flex items-center gap-2">
-                    <History className="w-5 h-5 text-white" />
-                    <h3 className="font-heading italic text-2xl text-white">Your Submissions</h3>
-                  </div>
-                  <button 
-                    onClick={() => setIsOfferHistoryOpen(false)}
-                    className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:scale-105 text-white/80 hover:text-white cursor-pointer"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-
-                {/* Submissions List */}
-                <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
-                  {submissions.map((sub) => (
-                    <div 
-                      key={sub.id}
-                      className="liquid-glass border border-white/10 p-4 rounded-xl text-left relative group"
-                    >
-                      <button 
-                        onClick={(e) => deleteSubmission(sub.id, e)}
-                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 w-7 h-7 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-all cursor-pointer"
-                        title="Delete record"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-
-                      <div className="flex justify-between items-start mb-2 pr-6">
-                        <span className="text-[10px] text-white/40 font-body block">{sub.submittedAt}</span>
-                        <span className="text-white font-bold font-body text-sm bg-white/10 px-2 py-0.5 rounded-full">${sub.offerPrice} USD</span>
-                      </div>
-                      <h4 className="font-semibold text-white text-xs font-body mb-1">Contact: {sub.name}</h4>
-                      <p className="text-[11px] text-white/60 font-body mb-1"><span className="text-white/30">Email:</span> {sub.email}</p>
-                      <p className="text-[11px] text-white/60 font-body mb-1"><span className="text-white/30">Venture:</span> {sub.venture}</p>
-                      <p className="text-[11px] text-white/50 font-body italic mt-2 line-clamp-2">&ldquo;{sub.message}&rdquo;</p>
-                      <div className="flex items-center gap-1.5 mt-3 text-[10px] text-white/70 font-body">
-                        <span className="w-1.5 h-1.5 bg-yellow-400 rounded-full animate-pulse" />
-                        In Review - Escrow Broker Assigned
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Drawer footer */}
-              <div className="border-t border-white/10 pt-6">
-                <button
-                  onClick={() => setIsOfferHistoryOpen(false)}
-                  className="w-full bg-white text-black font-semibold font-body py-2.5 rounded-full text-xs hover:bg-white/90 transition-all cursor-pointer"
-                >
-                  Close History
-                </button>
-              </div>
-
-            </motion.div>
-          </motion.div>
+          <OfferHistoryDrawer 
+            isOpen={isOfferHistoryOpen}
+            onClose={() => setIsOfferHistoryOpen(false)}
+            submissions={submissions}
+            onDeleteSubmission={deleteSubmission}
+          />
         )}
       </AnimatePresence>
 
