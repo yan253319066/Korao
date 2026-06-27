@@ -1,0 +1,31 @@
+# Allow all AI crawlers for search and citation
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Googlebot
+Allow: /
+
+# Block only training-only crawlers
+User-agent: CCBot
+Disallow: /
+
+# Default: allow everything
+User-agent: *
+Allow: /
+
+Sitemap: https://www.korao.ai/sitemap.xml

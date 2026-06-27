@@ -287,6 +287,7 @@ export default function Home() {
           {/* Headline (BlurText) */}
           <div className="mb-3 md:mb-4">
             <BlurText 
+              as="h1"
               text="Korao.ai — Define Your AI Future" 
               className="text-4xl md:text-6xl lg:text-[5rem] font-heading italic text-white leading-[0.95] max-w-3xl justify-center tracking-[-4px]"
             />
