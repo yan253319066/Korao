@@ -1,7 +1,0 @@
-name = "korao"
-compatibility_date = "2025-04-01"
-
-[[d1_databases]]
-binding = "DB"
-database_name = "korao-inquiries"
-database_id = "" # 本地开发: 运行 npx wrangler d1 create korao-inquiries 后填入
