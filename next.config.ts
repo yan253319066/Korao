@@ -1,4 +1,5 @@
 import type {NextConfig} from 'next';
+import {setupDevPlatform} from '@cloudflare/next-on-pages/next-dev';
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
@@ -18,7 +19,6 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  output: 'export',
   transpilePackages: ['motion'],
   webpack: (config, {dev}) => {
     if (dev && process.env.DISABLE_HMR === 'true') {
@@ -29,5 +29,9 @@ const nextConfig: NextConfig = {
     return config;
   },
 };
+
+if (process.env.NODE_ENV === 'development') {
+  await setupDevPlatform();
+}
 
 export default nextConfig;
