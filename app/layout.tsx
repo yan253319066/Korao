@@ -35,11 +35,16 @@ export const metadata: Metadata = {
     siteName: 'korao.ai',
     locale: 'en_US',
     type: 'website',
+    images: [{ url: '/og-image.png', width: 1200, height: 630 }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'korao.ai | Premium AI Domain For Sale',
     description: 'Acquire korao.ai — a concise, brandable, and future-ready .ai domain for artificial intelligence startups.',
+    images: ['/og-image.png'],
+  },
+  icons: {
+    icon: '/favicon.svg',
   },
   robots: {
     index: true,
@@ -90,7 +95,7 @@ const jsonLd = {
           name: 'What is korao.ai?',
           acceptedAnswer: {
             '@type': 'Answer',
-            text: 'korao.ai is a premium .ai domain name for sale. It is a short, brandable, and memorable domain ideal for artificial intelligence startups, AI agencies, LLM developers, and next-generation tech products.',
+            text: 'korao.ai is a premium .ai domain for sale. It is short, brandable, and memorable — ideal for AI startups, LLM developers, and next-gen tech products.',
           },
         },
         {
@@ -98,7 +103,7 @@ const jsonLd = {
           name: 'Why is the .ai TLD valuable for AI companies?',
           acceptedAnswer: {
             '@type': 'Answer',
-            text: '.ai is the country code top-level domain for Anguilla that has become the de facto domain extension for the global AI industry. Short, pronounceable .ai domain names are increasingly scarce, making remaining quality names valuable long-term digital assets for AI-focused brands.',
+            text: '.ai has become the de facto domain extension for the global AI industry. Short, pronounceable .ai names are increasingly scarce, making quality names valuable long-term digital assets.',
           },
         },
         {
@@ -106,7 +111,7 @@ const jsonLd = {
           name: 'How do I inquire about purchasing korao.ai?',
           acceptedAnswer: {
             '@type': 'Answer',
-            text: 'Visit korao.ai and use the on-site inquiry form to submit your offer. The process includes verification, escrow preparation, and confirmation steps. Offer history is tracked for reference.',
+            text: 'Visit korao.ai and submit an offer via the on-site inquiry form. The process includes verification, escrow preparation via Escrow.com, and domain transfer confirmation.',
           },
         },
         {
@@ -114,7 +119,7 @@ const jsonLd = {
           name: 'What makes a .ai domain premium?',
           acceptedAnswer: {
             '@type': 'Answer',
-            text: 'Premium .ai domains are typically short, memorable, brandable names with high commercial value. Key factors include name length (shorter is rarer), pronounceability, relevance to AI/tech, brand potential, and .ai TLD authority in the artificial intelligence industry.',
+            text: 'Premium .ai domains are short, memorable, brandable names with high commercial value. Key factors: length, pronounceability, AI/tech relevance, brand potential, and TLD authority.',
           },
         },
         {
@@ -122,7 +127,7 @@ const jsonLd = {
           name: 'Is korao.ai a good domain for a startup?',
           acceptedAnswer: {
             '@type': 'Answer',
-            text: 'Yes. korao.ai is short, easy to spell, globally pronounceable, and naturally aligned with the AI industry. These qualities make it an ideal brand domain for AI startups, model labs, AI tools, automation platforms, and intelligent SaaS products looking for a clean, modern brand identity.',
+            text: 'Yes. korao.ai is short, easy to spell, globally pronounceable, and naturally aligned with AI. It is ideal for AI startups, model labs, AI tools, and intelligent SaaS brands.',
           },
         },
       ],

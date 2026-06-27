@@ -6,9 +6,10 @@
 
 - Domain: korao.ai
 - TLD: .ai (official ccTLD for Anguilla, de facto global AI industry TLD)
-- Length: Short, memorable, one-word brandable name
-- Category: Premium domain acquisition
-- Ideal for: AI startups, LLM developers, AI tools, automation platforms, intelligent SaaS
+- Length: Short, memorable, one-word brandable name (7 chars before TLD)
+- Category: Premium domain acquisition (digital asset)
+- Ideal for: AI startups, LLM developers, AI tools, automation platforms, intelligent SaaS, venture brands
+- Escrow: Secured via Escrow.com or Dan.com
 
 ## Features
 
@@ -16,7 +17,28 @@
 - Easy pronunciation and high recall
 - Native AI vertical fit
 - Rare short-name .ai availability
+- Globally accessible spelling and phonetics
 
-## Inquiry
+## Acquisition Process
 
-Visit https://www.korao.ai to submit a domain acquisition inquiry.
+1. Submit inquiry via on-site form at https://www.korao.ai
+2. Offer review and verification
+3. Escrow setup (Escrow.com or Dan.com)
+4. Secure domain transfer
+5. Ownership confirmation
+
+## Pricing
+
+See https://www.korao.ai/pricing.md for structured acquisition details.
+
+## Related Files
+
+- llms-full.txt: Extended context with use cases and positioning
+- pricing.md: Structured pricing and acquisition data
+- robots.txt: Crawler access policy
+
+## Links
+
+- Website: https://www.korao.ai
+- Inquiry: https://www.korao.ai (on-page form)
+- Pricing: https://www.korao.ai/pricing.md
